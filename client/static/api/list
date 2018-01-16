@@ -1,0 +1,17 @@
+[
+    {
+        "date": { "year": 2017, "month": 1, "day": 14 },
+	"entries": [
+	    {"name": "Huel", "value": 400},
+	    {"name": "Yoghurt", "value": 280}
+	]
+    },
+    {
+        "date": { "year": 2017, "month": 1, "day": 15 },
+	"entries": [
+	    {"name": "Pizza", "value": 1500},
+	    {"name": "Yoghurt", "value": 280},
+	    {"name": "Apple", "value": 68}
+	]
+    }
+]
