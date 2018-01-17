@@ -1,15 +1,4 @@
 [[package]]
-name = "client"
-version = "0.1.0"
-dependencies = [
- "serde 1.0.27 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.27 (registry+https://github.com/rust-lang/crates.io-index)",
- "shared 0.1.0",
- "stdweb 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "yew 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "dtoa"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -70,6 +59,8 @@ version = "0.1.0"
 dependencies = [
  "serde 1.0.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.27 (registry+https://github.com/rust-lang/crates.io-index)",
+ "stdweb 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "yew 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

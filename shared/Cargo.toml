@@ -1,12 +1,9 @@
 [package]
-name = "client"
+name = "shared"
 version = "0.1.0"
 authors = ["Victor Koenders <victor.koenders@gmail.com>"]
 
 [dependencies]
 serde = "*"
 serde_derive = "*"
-yew = "*"
-stdweb = "*"
-shared = { path = "../shared" }
 

@@ -2,19 +2,14 @@
 
 #[macro_use]
 extern crate yew;
-extern crate serde;
-// extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
 #[macro_use]
 extern crate stdweb;
-
-mod model;
+extern crate shared;
 
 use yew::services::fetch::{FetchService, Method};
 use yew::services::console::ConsoleService;
+use shared::{Day, Model, Entry};
 use yew::html::{App, Html};
-use model::{Day, Model, Entry};
 use yew::format::Json;
 
 struct Context {
