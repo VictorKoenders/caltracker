@@ -1,3 +1,5 @@
+// #![allow(unused_variables)]
+
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
 extern crate rocket;
@@ -55,6 +57,64 @@ fn client_wasm() -> NamedFile {
     NamedFile::open("../client/target/wasm32-unknown-unknown/release/client.wasm").unwrap()
 }
 
+#[post("/api/entry/<year>/<month>/<day>", format = "application/json", data = "<entry>")]
+fn post(pg_pool: server::DbConn, year: u16, month: u8, day: u8, entry: Json<shared::Entry>) -> Json<shared::Entry> {
+    use server::schema::*;
+    use server::model::*;
+    let entry = entry.into_inner();
+    if entry.id.len() > 0 {
+        if let Ok(id) = uuid::Uuid::parse_str(&entry.id) {
+            println!("Updating entry");
+            if let Ok(new_entry) = diesel::update(dayentry::dsl::dayentry.find(id))
+                                  .set((
+                                      dayentry::dsl::name.eq(entry.name.clone()),
+                                      dayentry::dsl::value.eq(entry.value as f64)
+                                  ))
+                                  .get_result::<DayEntry>(&*pg_pool) {
+               return Json(new_entry.into());
+            }
+        }
+    }
+
+    let day = match day::dsl::day
+        .filter( day::dsl::year.eq(year as i16))
+        .filter( day::dsl::month.eq(month as i16))
+        .filter( day::dsl::day_of_month.eq(day as i16))
+        .get_result::<Day>(&*pg_pool) {
+        Ok(day) => day,
+        Err(e) => {
+            println!("Could not find day: {:?}", e);
+
+            let day = Day {
+                id: uuid::Uuid::new_v4(),
+                year: year as i16,
+                month: month as i16,
+                day_of_month: day as i16,
+            };
+            diesel::insert_into(day::table)
+                    .values(&day)
+                    .execute(&*pg_pool)
+                    .expect("Could not insert new day");
+            day
+        }
+    };
+
+    let entry = DayEntry {
+        id: uuid::Uuid::new_v4(),
+        day: day.id,
+        name: entry.name,
+        value: entry.value as f64
+    };
+
+    println!("Creating new entry {:?}", entry);
+
+    diesel::insert_into(dayentry::table)
+            .values(&entry)
+            .execute(&*pg_pool)
+            .expect("Could not insert new entry");
+    Json(entry.into())
+}
+
 #[get("/api/list")]
 fn list(pg_pool: server::DbConn) -> Json<Vec<shared::Day>> {
     use server::schema::day::dsl::*;
@@ -67,7 +127,7 @@ fn list(pg_pool: server::DbConn) -> Json<Vec<shared::Day>> {
         .order(month.desc())
         .order(year.desc());
 
-    println!("{:?}", diesel::debug_query::<diesel::pg::Pg, _>(&query)); 
+    // println!("{:?}", diesel::debug_query::<diesel::pg::Pg, _>(&query)); 
 
     let entries = query.load::<DayEntryJoinedWithDay>(&*pg_pool)
         .expect("Could not load data from server");
@@ -90,6 +150,7 @@ fn list(pg_pool: server::DbConn) -> Json<Vec<shared::Day>> {
             }
         };
         days[index].entries.push(shared::Entry {
+            id: entry.entry.0.to_string(),
             name: entry.entry.2,
             value: entry.entry.3 as f32,
         });
@@ -104,6 +165,6 @@ fn main() {
 
     rocket::ignite()
         .manage(server::init(&database_url))
-        .mount("/", routes![index, list, app_js, client_wasm])
+        .mount("/", routes![index, list, app_js, client_wasm, post])
         .launch();
 }

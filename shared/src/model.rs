@@ -2,6 +2,7 @@
 pub struct Model {
     pub days: Vec<Day>,
     pub current_day: Option<usize>,
+    pub current_entry: Option<usize>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -37,8 +38,9 @@ impl Day {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Entry {
+    pub id: String,
     pub name: String,
     pub value: f32,
 }

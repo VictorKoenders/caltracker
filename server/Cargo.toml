@@ -12,6 +12,6 @@ dotenv = "*"
 rocket = "*"
 rocket_contrib = "*"
 rocket_codegen = "*"
-uuid = "*"
+uuid = { version = "*", features = ["v4"] }
 shared = { path = "../shared" }
 

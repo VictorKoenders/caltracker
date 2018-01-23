@@ -5,6 +5,7 @@ authors = ["Victor Koenders <victor.koenders@gmail.com>"]
 
 [dependencies]
 serde = "*"
+serde_json = "*"
 serde_derive = "*"
 yew = "*"
 stdweb = "*"
