@@ -64,7 +64,6 @@ fn post(pg_pool: server::DbConn, year: u16, month: u8, day: u8, entry: Json<shar
     let entry = entry.into_inner();
     if entry.id.len() > 0 {
         if let Ok(id) = uuid::Uuid::parse_str(&entry.id) {
-            println!("Updating entry");
             if let Ok(new_entry) = diesel::update(dayentry::dsl::dayentry.find(id))
                                   .set((
                                       dayentry::dsl::name.eq(entry.name.clone()),
@@ -82,9 +81,7 @@ fn post(pg_pool: server::DbConn, year: u16, month: u8, day: u8, entry: Json<shar
         .filter( day::dsl::day_of_month.eq(day as i16))
         .get_result::<Day>(&*pg_pool) {
         Ok(day) => day,
-        Err(e) => {
-            println!("Could not find day: {:?}", e);
-
+        Err(_) => {
             let day = Day {
                 id: uuid::Uuid::new_v4(),
                 year: year as i16,
@@ -106,8 +103,6 @@ fn post(pg_pool: server::DbConn, year: u16, month: u8, day: u8, entry: Json<shar
         value: entry.value as f64
     };
 
-    println!("Creating new entry {:?}", entry);
-
     diesel::insert_into(dayentry::table)
             .values(&entry)
             .execute(&*pg_pool)
@@ -126,8 +121,6 @@ fn list(pg_pool: server::DbConn) -> Json<Vec<shared::Day>> {
         .order(day_of_month.desc())
         .order(month.desc())
         .order(year.desc());
-
-    // println!("{:?}", diesel::debug_query::<diesel::pg::Pg, _>(&query)); 
 
     let entries = query.load::<DayEntryJoinedWithDay>(&*pg_pool)
         .expect("Could not load data from server");
