@@ -1,40 +1,28 @@
-#![allow(dead_code)]
-#![recursion_limit="128"]
+#![recursion_limit = "128"]
 
-#[macro_use]
-extern crate yew;
+extern crate serde_json;
+extern crate shared;
 #[macro_use]
 extern crate stdweb;
-extern crate shared;
-extern crate serde_json;
+#[macro_use]
+extern crate yew;
+
+mod msg;
+mod render;
 
 use yew::services::fetch::{FetchService, Method};
 use yew::services::console::ConsoleService;
-use yew::html::{App, Html, InputData};
-use shared::{Day, Model, Entry};
+use yew::html::{App, Html};
+use shared::{Entry, Model};
+use render::title::Title;
+use render::Renderable;
 use yew::format::Json;
+use msg::Msg;
 
 struct Context {
     pub console: ConsoleService,
     pub fetch: FetchService<Msg>,
     pub sender: yew::html::AppSender<Msg>,
-}
-
-enum Msg {
-    Load,
-    Loaded(Result<Vec<Day>, ()>),
-    LoadedEntry {
-        day_index: usize,
-        entry_index: usize,
-        result: Entry,
-    },
-    SelectDay(usize),
-    EditEntry(usize),
-    UpdateEntryName(String),
-    UpdateEntryValue(String),
-    SaveEntry,
-    NewEntry,
-    Nop,
 }
 
 fn main() {
@@ -59,60 +47,12 @@ fn view(model: &Model) -> Html<Msg> {
     html! {
         <div>
             <ul class="test", >
-                {for model.days.iter().enumerate().map(render_day_tile)}
+                {for model.days.iter().enumerate().map(|(i, day)| Title(day).render(&model, i))}
             </ul>
             { if let Some(idx) = model.current_day {
-               render_day(&model, &model.days[idx])
+                model.days[idx].render(&model, idx)
             } else { html! { <div /> } } }
         </div>
-    }
-}
-
-fn render_day_tile((index, day): (usize, &Day)) -> Html<Msg> {
-    html! {
-        <li onclick=move|_| Msg::SelectDay(index), >{day.label()}</li>
-    }
-}
-
-fn render_day(model: &Model, day: &Day) -> Html<Msg> {
-    html! {
-        <div>
-            <b>
-                {"Day "}
-                {day.label()}
-            </b>
-            <dl>
-                {for day.entries.iter().enumerate().map(|e| render_day_entry(model, e))}
-                <dt><a onclick=|_| Msg::NewEntry, >{"New"}</a></dt>
-                <dd></dd>
-            </dl>
-        </div>
-    }
-}
-
-fn render_day_entry(model: &Model, (index, entry): (usize, &Entry)) -> Html<Msg> {
-    match model.current_entry {
-        Some(i) if i == index => html! {
-            <dt>
-                <input type="text",
-                       value={&entry.name},
-                       oninput=|e: InputData| Msg::UpdateEntryName(e.value),
-                />
-            </dt>
-            <dd>
-                <input type="text",
-                       value={&entry.value},
-                       oninput=|e: InputData| Msg::UpdateEntryValue(e.value),
-                />
-            </dd>
-            <input type="button",
-                   value={"Save"},
-                   onclick=|_| Msg::SaveEntry, />
-        },
-        _ => html! {
-            <dt ondoubleclick=move|_| Msg::EditEntry(index), >{&entry.name}</dt>
-            <dd ondoubleclick=move|_| Msg::EditEntry(index), >{&entry.value}</dd>
-        }
     }
 }
 
@@ -127,10 +67,14 @@ fn save_model(context: &mut Context, model: &Model) {
 
     let json: yew::format::Storable = Json(&entry).into();
     let mut sender = context.sender.clone();
-    
+
     let callback = move |response: String| {
         let entry: Entry = serde_json::from_str(&response).unwrap();
-        sender.send(Msg::LoadedEntry { day_index, entry_index, result: entry });
+        sender.send(Msg::LoadedEntry {
+            day_index,
+            entry_index,
+            result: entry,
+        });
     };
     js! {
         var cb = @{callback};
@@ -149,7 +93,6 @@ fn save_model(context: &mut Context, model: &Model) {
     }
 }
 
-
 fn update(context: &mut Context, model: &mut Model, msg: Msg) {
     match msg {
         Msg::Load => {
@@ -158,17 +101,19 @@ fn update(context: &mut Context, model: &mut Model, msg: Msg) {
                 Msg::Loaded(r)
             });
         }
-        Msg::Loaded(days) => {
-            match days {
-                Ok(d) => model.days = d,
-                Err(_) => {
-                    js! {
-                        console.error("Could not load data from server");
-                    };
-                }
+        Msg::Loaded(days) => match days {
+            Ok(d) => model.days = d,
+            Err(_) => {
+                js! {
+                    console.error("Could not load data from server");
+                };
             }
-        }
-        Msg::LoadedEntry {  day_index,  entry_index,  result } => {
+        },
+        Msg::LoadedEntry {
+            day_index,
+            entry_index,
+            result,
+        } => {
             let day = &mut model.days[day_index];
             day.entries[entry_index] = result;
         }
@@ -203,4 +148,3 @@ fn update(context: &mut Context, model: &mut Model, msg: Msg) {
         Msg::Nop => {}
     };
 }
-
