@@ -1,9 +1,3 @@
-#[derive(Default)]
-pub struct Model {
-    pub days: Vec<Day>,
-    pub current_day: Option<usize>,
-    pub current_entry: Option<usize>,
-}
 
 #[derive(Serialize, Deserialize)]
 pub struct ModelFromServer {

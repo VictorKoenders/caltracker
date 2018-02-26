@@ -7,7 +7,7 @@ authors = ["Victor Koenders <victor.koenders@gmail.com>"]
 serde = "*"
 serde_json = "*"
 serde_derive = "*"
-yew = "*"
+yew = { git = "https://github.com/DenisKolodin/yew" }
 stdweb = "*"
 shared = { path = "../shared" }
-
+failure = "*"

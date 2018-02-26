@@ -1,6 +1,6 @@
 use super::Renderable;
 use yew::html::Html;
-use {Msg, Model};
+use {Context, Msg, Model};
 use shared::Day;
 
 pub struct Title<R: Labelled>(pub R);
@@ -9,7 +9,7 @@ impl<R> Renderable for Title<R>
 where
     R: Labelled,
 {
-    fn render(&self, _: &Model, index: usize) -> Html<Msg> {
+    fn render(&self, _: &Model, index: usize) -> Html<Context, Model> {
         html! {
             <li onclick=move|_| Msg::SelectDay(index), >{self.0.label()}</li>
         }
@@ -25,4 +25,3 @@ impl<'a> Labelled for &'a Day {
         Day::label(self)
     }
 }
-

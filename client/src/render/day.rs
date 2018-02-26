@@ -1,10 +1,10 @@
 use super::Renderable;
 use yew::html::Html;
-use { Msg, Model };
+use {Context, Msg, Model};
 use shared::Day;
 
 impl Renderable for Day {
-    fn render(&self, model: &Model, _: usize) -> Html<Msg> {
+    fn render(&self, model: &Model, _: usize) -> Html<Context, Model> {
         html! {
             <div>
                 <b>
