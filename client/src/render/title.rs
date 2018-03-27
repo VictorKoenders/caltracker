@@ -3,25 +3,15 @@ use yew::html::Html;
 use {Context, Msg, Model};
 use shared::Day;
 
-pub struct Title<R: Labelled>(pub R);
+pub struct Title<R>(pub R);
 
-impl<R> Renderable for Title<R>
-where
-    R: Labelled,
+impl<'a> Renderable for Title<&'a Day>
 {
-    fn render(&self, _: &Model, index: usize) -> Html<Context, Model> {
+    fn render(&self, _: &Model, _: usize) -> Html<Context, Model> {
+        let date = self.0.date.clone();
         html! {
-            <li onclick=move|_| Msg::SelectDay(index), >{self.0.label()}</li>
+            <li onclick=move|_| Msg::SelectDay(date.clone()), >{self.0.label()}</li>
         }
     }
 }
 
-pub trait Labelled {
-    fn label(&self) -> String;
-}
-
-impl<'a> Labelled for &'a Day {
-    fn label(&self) -> String {
-        Day::label(self)
-    }
-}

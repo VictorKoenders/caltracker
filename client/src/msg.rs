@@ -1,4 +1,4 @@
-use shared::{Day, Entry};
+use shared::{Day, Date, Entry};
 use failure::Error;
 
 #[derive(Debug)]
@@ -6,11 +6,11 @@ pub enum Msg {
     Load,
     Loaded(Result<Vec<Day>, Error>),
     LoadedEntry {
-        day_index: usize,
+        day: Date,
         entry_index: usize,
         result: Result<Entry, Error>,
     },
-    SelectDay(usize),
+    SelectDay(Date),
     EditEntry(usize),
     UpdateEntryName(String),
     UpdateEntryValue(String),

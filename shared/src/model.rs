@@ -10,7 +10,7 @@ pub struct Day {
     pub entries: Vec<Entry>,
 }
 
-#[derive(Default, Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, Serialize, Deserialize, Clone)]
 pub struct Date {
     pub day: u8,
     pub month: u8,
@@ -29,6 +29,14 @@ impl Day {
 
     pub fn total(&self) -> f32 {
         self.entries.iter().map(|e| e.value).sum()
+    }
+}
+
+impl ::std::cmp::PartialEq for Date {
+    fn eq(&self, other: &Date) -> bool {
+        self.year == other.year &&
+            self.month == other.month &&
+            self.day == other.day
     }
 }
 

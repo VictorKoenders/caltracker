@@ -4,18 +4,20 @@ extern crate serde_json;
 #[macro_use]
 extern crate failure;
 extern crate shared;
+#[macro_use]
 extern crate stdweb;
 #[macro_use]
 extern crate yew;
 
 mod msg;
 mod render;
+mod date;
 
 use yew::html::{Component, ComponentUpdate, Env, Html, Scope, Renderable};
 use yew::services::fetch::{FetchService, FetchTask, Request, Response};
 use yew::services::console::ConsoleService;
 use render::Renderable as CustomRenderable;
-use shared::{Day, Entry};
+use shared::{Date, Day, Entry};
 use render::title::Title;
 use yew::format::Json;
 use msg::Msg;
@@ -23,9 +25,19 @@ use msg::Msg;
 #[derive(Default)]
 pub struct Model {
     pub days: Vec<Day>,
-    pub current_day: Option<usize>,
+    pub current_day: Option<Date>,
     pub current_entry: Option<usize>,
     pub fetch_task: Option<FetchTask>,
+}
+
+impl Model {
+    pub fn current_day_index(&self) -> Option<usize> {
+        if let Some(ref date) = self.current_day {
+            self.days.iter().position(|day| &day.date == date)
+        } else {
+            None
+        }
+    }
 }
 
 pub struct Context {
@@ -58,6 +70,7 @@ impl Component<Context> for Model {
     }
 
     fn update(&mut self, msg: Self::Msg, context: &mut Env<Context, Self>) -> bool {
+        context.console.log(&format!("{:?}", msg));
         match msg {
             Msg::Load => {
                 let callback = context.send_back(Msg::Loaded);
@@ -86,14 +99,18 @@ impl Component<Context> for Model {
                 }
             }
             Msg::LoadedEntry {
-                day_index,
+                day,
                 entry_index,
                 result,
             } => {
                 match result {
                     Ok(entry) => {
-                        let day = &mut self.days[day_index];
-                        day.entries[entry_index] = entry;
+                        context.console.log("TODO Loaded entry");
+                        context.console.log(&format!("- day: {:?}", day));
+                        context.console.log(&format!("- entry_index: {:?}", entry_index));
+                        context.console.log(&format!("- entry: {:?}", entry));
+                        //let day = &mut self.days[day_index];
+                        //day.entries[entry_index] = entry;
                     }
                     Err(e) => {
                         context.console.error(
@@ -112,19 +129,25 @@ impl Component<Context> for Model {
                 self.current_entry = Some(index);
             }
             Msg::NewEntry => {
-                let day = &mut self.days[self.current_day.unwrap()];
-                self.current_entry = Some(day.entries.len());
-                day.entries.push(Default::default());
+                if let Some(idx) = self.current_day_index() {
+                    let day = &mut self.days[idx];
+                    self.current_entry = Some(day.entries.len());
+                    day.entries.push(Default::default());
+                }
             }
             Msg::UpdateEntryName(name) => {
-                let day = &mut self.days[self.current_day.unwrap()];
-                let entry = &mut day.entries[self.current_entry.unwrap()];
-                entry.name = name;
+                if let Some(idx) = self.current_day_index() {
+                    let day = &mut self.days[idx];
+                    let entry = &mut day.entries[self.current_entry.unwrap()];
+                    entry.name = name;
+                }
             }
             Msg::UpdateEntryValue(value) => {
-                let day = &mut self.days[self.current_day.unwrap()];
-                let entry = &mut day.entries[self.current_entry.unwrap()];
-                entry.value = value.parse().unwrap_or(0f32);
+                if let Some(idx) = self.current_day_index() {
+                    let day = &mut self.days[idx];
+                    let entry = &mut day.entries[self.current_entry.unwrap()];
+                    entry.value = value.parse().unwrap_or(0f32);
+                }
             }
             Msg::SaveEntry => {
                 save_model(context, self);
@@ -142,10 +165,10 @@ impl Renderable<Context, Model> for Model {
     fn view(&self) -> Html<Context, Self> {
         html! {
             <div>
-                <ul class="test", >
+                <ul>
                     {for self.days.iter().enumerate().map(|(i, day)| Title(day).render(self, i))}
                 </ul>
-                { if let Some(idx) = self.current_day {
+                { if let Some(idx) = self.current_day_index() {
                     self.days[idx].render(self, idx)
                 } else { html! { <div /> } } }
             </div>
@@ -154,21 +177,22 @@ impl Renderable<Context, Model> for Model {
 }
 
 fn save_model(context: &mut Env<Context, Model>, model: &Model) {
-    let day_index = model.current_day.unwrap();
+    let day_index = model.current_day_index().unwrap();
     let entry_index = model.current_entry.unwrap();
     let day = &model.days[day_index];
     let entry = &day.entries[entry_index];
+    let date = day.date.clone();
 
     let url = format!(
         "/api/entry/{}/{}/{}",
-        day.date.year,
-        day.date.month,
-        day.date.day
+        date.year,
+        date.month,
+        date.day
     );
     let json: yew::format::Storable = Json(&entry).into();
     let callback = context.send_back(move |data| {
         Msg::LoadedEntry {
-            day_index,
+            day: date.clone(),
             entry_index,
             result: data,
         }
